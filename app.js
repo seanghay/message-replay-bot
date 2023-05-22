@@ -79,9 +79,6 @@ async function replay(task) {
 
 bot.start(ctx => ctx.reply("Hello from Message Replay! 👋"))
 bot.command("replay", async (ctx) => {
-
-  console.dir(ctx.message, { depth: 100 })
-
   const roomId = ctx.chat.id;
   const replayMessage = ctx.message.reply_to_message;
 
