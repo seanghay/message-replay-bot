@@ -102,15 +102,13 @@ bot.command("replay", async (ctx) => {
 
   if (!cron.validate(exp)) {
     exp = translate(exp)
+  }
 
-    if (!cron.validate(exp)) {
-      ctx.reply("Your expression is invalid")
-      return;
-    }
-
-    ctx.reply("Your CRON expression is invalid")
+  if (!cron.validate(exp)) {
+    ctx.reply("Your expression is invalid")
     return;
   }
+
 
   const payload = {
     chat_id: roomId,
