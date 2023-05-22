@@ -4,6 +4,8 @@ import cron from 'node-cron';
 import Knex from 'knex'
 import { fileURLToPath } from 'node:url'
 
+const TASKS_MAP = new Map();
+
 const knex = Knex({
   client: "better-sqlite3",
   connection: {
@@ -38,7 +40,6 @@ if (token == null || typeof token !== 'string') {
 
 const bot = new Telegraf(token)
 
-
 // register tasks
 const tasks = await Task()
 
@@ -47,12 +48,13 @@ for (const task of tasks) {
 }
 
 function registerPayload(task) {
-  console.log('register ' + task.id)
-  cron.schedule(task.cron, async () => {
+  console.log('register ' + task.id);
+  const job = cron.schedule(task.cron, async () => {
     await replay(task)
   }, {
     timezone: "Asia/Bangkok"
   })
+  TASKS_MAP.set(task.id, job);
 }
 
 
@@ -153,6 +155,18 @@ bot.command("test", async (ctx) => {
 })
 
 bot.command("clear", async (ctx) => {
+  // stop tasks
+  const tasks = await Task().where('chat_id', ctx.chat.id)
+
+  for (const task of tasks) {
+    const job = TASKS_MAP.get(task.id);
+    if (job) {
+      job.stop()
+      console.log('kill task: ' + task.id)
+    }
+  }
+
+  // clean up the db
   await Task().where('chat_id', ctx.chat.id).delete()
   await ctx.reply("✅ Tasks cleared")
 })
