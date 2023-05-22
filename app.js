@@ -3,6 +3,7 @@ import { Telegraf } from 'telegraf';
 import cron from 'node-cron';
 import Knex from 'knex'
 import { fileURLToPath } from 'node:url'
+import translate from 'friendly-node-cron'
 
 const TASKS_MAP = new Map();
 
@@ -100,6 +101,13 @@ bot.command("replay", async (ctx) => {
   }
 
   if (!cron.validate(exp)) {
+    exp = translate(exp)
+
+    if (!cron.validate(exp)) {
+      ctx.reply("Your expression is invalid")
+      return;
+    }
+
     ctx.reply("Your CRON expression is invalid")
     return;
   }

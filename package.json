@@ -5,6 +5,7 @@
   "dependencies": {
     "better-sqlite3": "^8.4.0",
     "dotenv": "^16.0.3",
+    "friendly-node-cron": "^1.4.1",
     "knex": "^2.4.2",
     "node-cron": "^3.0.2",
     "telegraf": "^4.12.2"
