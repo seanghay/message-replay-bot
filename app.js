@@ -43,7 +43,10 @@ const bot = new Telegraf(token)
 const tasks = await Task()
 
 for (const task of tasks) {
+  registerPayload(task)
+}
 
+function registerPayload(task) {
   console.log('register ' + task.id)
   cron.schedule(task.cron, async () => {
 
@@ -53,7 +56,7 @@ for (const task of tasks) {
       })
       return
     }
-    
+
     await bot.telegram.sendMessage(task.chat_id, task.msg);
   }, {
     timezone: "Asia/Bangkok"
@@ -82,15 +85,18 @@ bot.command("replay", async (ctx) => {
     return;
   }
 
-  const task = await Task().insert({
+  const payload = {
     chat_id: roomId,
     msg: replayMessage.document ? replayMessage.document.file_id : replayMessage.text,
     msg_type: replayMessage.document ? "file" : "text",
     cron: exp,
     caption: replayMessage.caption,
-  }, 'id')
+  }
 
-  ctx.reply(`✅ Task ${task[0].id} has been added. `);
+  const tasks = await Task().insert(payload, '*')
+  registerPayload(tasks[0])
+  
+  ctx.reply(`✅ Task ${tasks[0].id} has been added. `);
 })
 
 bot.command("tasks", async (ctx) => {
