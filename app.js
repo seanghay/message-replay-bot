@@ -49,18 +49,30 @@ for (const task of tasks) {
 function registerPayload(task) {
   console.log('register ' + task.id)
   cron.schedule(task.cron, async () => {
-
-    if (task.msg_type === 'file') {
-      await bot.telegram.sendDocument(task.chat_id, task.msg, {
-        caption: task.caption
-      })
-      return
-    }
-
-    await bot.telegram.sendMessage(task.chat_id, task.msg);
+    await replay(task)
   }, {
     timezone: "Asia/Bangkok"
   })
+}
+
+
+async function replay(task) {
+  if (task.msg_type === 'file') {
+    await bot.telegram.sendDocument(task.chat_id, task.msg, {
+      caption: task.caption
+    })
+
+    return
+  }
+
+  if (task.msg_type === "photo") {
+    await bot.telegram.sendPhoto(task.chat_id, task.msg, {
+      caption: task.caption
+    })
+    return;
+  }
+
+  await bot.telegram.sendMessage(task.chat_id, task.msg);
 }
 
 bot.start(ctx => ctx.reply("Hello from Message Replay! 👋"))
@@ -68,6 +80,12 @@ bot.command("replay", async (ctx) => {
 
   const roomId = ctx.chat.id;
   const replayMessage = ctx.message.reply_to_message;
+
+  if (!replayMessage) {
+    ctx.reply("No message tagged")
+    return;
+  }
+
   const COMMAND_REGEX = /^(\/[\w@]+)\s+(.+)/gm;
   const result = COMMAND_REGEX.exec(ctx.message.text)
 
@@ -87,15 +105,17 @@ bot.command("replay", async (ctx) => {
 
   const payload = {
     chat_id: roomId,
-    msg: replayMessage.document ? replayMessage.document.file_id : replayMessage.text,
-    msg_type: replayMessage.document ? "file" : "text",
+    msg: replayMessage.document ? replayMessage.document.file_id : replayMessage.photo
+      ? replayMessage.photo[0].file_id : replayMessage.text,
+
+    msg_type: replayMessage.document ? "file" : replayMessage.photo ? "photo" : "text",
     cron: exp,
     caption: replayMessage.caption,
   }
 
   const tasks = await Task().insert(payload, '*')
   registerPayload(tasks[0])
-  
+
   ctx.reply(`✅ Task ${tasks[0].id} has been added. `);
 })
 
@@ -125,13 +145,7 @@ bot.command("test", async (ctx) => {
       await ctx.reply('Task not found')
       return
     }
-
-    if (task.msg_type === 'file') {
-      await ctx.replyWithDocument(task.msg, { caption: task.caption })
-      return
-    }
-
-    await ctx.reply(task.msg)
+    await replay(task);
     return;
   }
 
